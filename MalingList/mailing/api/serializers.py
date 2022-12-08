@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_writable_nested import WritableNestedModelSerializer
 
 from mailing.models import *
 
@@ -25,11 +26,12 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = "__all__"
+        fields = ("client_id", "mailing_id", "datetime", "status", "text", "pk")
 
 
 class MailingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Mailing
-        fields = "__all__"
+        fields = ("datetime_start", "datetime_end", "client_tag", "client_mobile_operator_code", "message_text", "pk",
+                  "in_active")

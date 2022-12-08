@@ -1,19 +1,37 @@
 from django.db import models
 
-from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator
+from django.core.validators import RegexValidator, MaxValueValidator, MinValueValidator, ValidationError, BaseValidator
+from django.db.models import CheckConstraint, Q, F
+from django.utils.translation import gettext_lazy as _
 
 import pytz
 
 
 class Mailing(models.Model):
     """Mailing model"""
-    datetime_run = models.DateTimeField(verbose_name="Дата и время создания рассылки")
-    datetime_end = models.DateTimeField(verbose_name="Дата и время окончания рассылки")
-    client_tag = models.CharField(max_length=15, verbose_name='Тег', help_text="Максимум 15 символов")
+    datetime_start = models.DateTimeField(verbose_name="Дата и время создания рассылки",)
+    datetime_end = models.DateTimeField(verbose_name="Дата и время окончания рассылки", )
+    client_tag = models.CharField(max_length=15, verbose_name='Тег', help_text="Максимум 15 символов", null=True,
+                                  blank=True)
     client_mobile_operator_code = models.PositiveIntegerField(verbose_name="Код мобильного оператора",
                                                               validators=[MinValueValidator(1), MaxValueValidator(999)],
                                                               help_text="От 1 до 999")
+    message_text = models.TextField(verbose_name="Текст сообщения")
+    in_active = models.BooleanField(default=False)
 
+    class Meta:
+        constraints = [
+            # Ensures constraint on DB level, raises IntegrityError (500 on debug=False)
+            CheckConstraint(
+                check=Q(datetime_end__gt=F('datetime_start')), name='check_start_date',
+            ),
+        ]
+
+    def clean(self):
+        # Ensures constraint on model level, raises ValidationError
+        if self.datetime_start > self.datetime_end:
+            # raise error for field
+            raise ValidationError({'datetime_end': _('End date cannot be smaller then start date.')})
 
 class Client(models.Model):
     """Client Description"""
@@ -50,5 +68,5 @@ class Message(models.Model):
         ("NST", "Not sent"),
     ]
     datetime = models.DateTimeField(verbose_name="Дата и время отправки сообщения", auto_now_add=True)
-    status = models.CharField(max_length=20, verbose_name="Статус отправки", choices=CHOICES_STATUS)
+    status = models.CharField(max_length=20, verbose_name="Статус отправки", choices=CHOICES_STATUS, default="PRS")
     text = models.TextField(verbose_name="Текст сообщения")

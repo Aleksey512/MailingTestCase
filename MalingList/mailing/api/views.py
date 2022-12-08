@@ -1,28 +1,29 @@
-from rest_framework import generics, viewsets
-from rest_framework.decorators import action
+from rest_framework import viewsets
+from rest_framework import mixins
 
 from mailing.api.serializers import *
 
 
-class ClientAPIList(viewsets.ModelViewSet):
-    def get_queryset(self):
-        return Client.objects.all()
+class BaseModelMixin(mixins.ListModelMixin,
+                     mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.DestroyModelMixin,
+                     viewsets.GenericViewSet):
+    pass
 
+
+class ClientAPIView(BaseModelMixin):
+    queryset = Client.objects.all()
     serializer_class = ClientSerialzier
-    http_method_names = ["get", "post"]
 
 
-class MessageAPIList(viewsets.ModelViewSet):
-    def get_queryset(self):
-        return Message.objects.all()
-
+class MessageAPIView(BaseModelMixin):
+    queryset = Message.objects.all()
     serializer_class = MessageSerializer
-    http_method_names = ["get", "post"]
 
 
-class MailingAPIList(viewsets.ModelViewSet):
-    def get_queryset(self):
-        return Mailing.objects.all()
-
+class MailingAPIView(BaseModelMixin):
+    queryset = Mailing.objects.all()
     serializer_class = MailingSerializer
-    http_method_names = ["get", "post"]
+
